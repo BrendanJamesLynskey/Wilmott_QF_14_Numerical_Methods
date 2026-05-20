@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wilmott QF 14 &mdash; Numerical Methods</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0a; --bg-card: #0d1117; --bg-code: #161b22;
+            --text-primary: #e6edf3; --text-secondary: #8b949e;
+            --accent: #fbbf24; --accent-dim: #fbbf2444; --accent-glow: #fbbf2433;
+            --accent-2: #f472b6; --accent-3: #a78bfa; --accent-4: #34d399;
+            --accent-5: #60a5fa;
+            --border: #21262d;
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-body: 'Inter', sans-serif;
+            --max-width: 900px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-body); font-size: 17px; line-height: 1.7; overflow-x: hidden; }
+        .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem 1.5rem; text-align: center; position: relative; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 600px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+        .hero > * { position: relative; z-index: 1; }
+        .series-label { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 1rem; }
+        .hero h1 { font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; color: var(--text-primary); line-height: 1.2; margin-bottom: 1rem; }
+        .hero h1 .accent { color: var(--accent); }
+        .hero .subtitle { font-size: 1.1rem; color: var(--text-secondary); max-width: 640px; margin-bottom: 2rem; }
+        .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 2.5rem; }
+        .tag { font-family: var(--font-mono); font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); background: var(--accent-dim); white-space: nowrap; }
+        .pipeline { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.25rem; margin-bottom: 1rem; max-width: var(--max-width); }
+        .pipeline-step { font-family: var(--font-mono); font-size: 0.7rem; padding: 0.3rem 0.7rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; color: var(--text-secondary); white-space: nowrap; }
+        .pipeline-arrow { color: var(--accent); font-size: 0.9rem; font-weight: 700; }
+        .slide { min-height: 100vh; max-width: var(--max-width); margin: 0 auto; padding: 4rem 1.5rem; position: relative; display: flex; flex-direction: column; justify-content: center; }
+        .slide-number { font-family: var(--font-display); font-size: 5rem; font-weight: 700; color: var(--accent-dim); position: absolute; top: 2rem; right: 1.5rem; line-height: 1; user-select: none; }
+        .slide h2 { font-family: var(--font-display); font-size: 1.9rem; font-weight: 700; color: var(--accent); margin-bottom: 1.5rem; line-height: 1.25; }
+        .slide h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; color: var(--text-primary); margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .slide p { margin-bottom: 1rem; color: var(--text-secondary); }
+        .slide p strong { color: var(--text-primary); }
+        .slide ul, .slide ol { margin-bottom: 1rem; padding-left: 1.5rem; color: var(--text-secondary); }
+        .slide li { margin-bottom: 0.4rem; }
+        .slide li strong { color: var(--text-primary); }
+        .slide code { background: var(--bg-code); padding: 0.1rem 0.35rem; border-radius: 3px; font-family: var(--font-mono); font-size: 0.85em; color: var(--accent); }
+        .diagram-grid { display: grid; gap: 0.75rem; margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+        .diagram-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+        .diagram-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .diagram-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+        .diagram-panel { padding: 1rem; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; }
+        .diagram-panel.accent-border { border-left: 3px solid var(--accent); }
+        .diagram-panel.r { border-left: 3px solid var(--accent-2); }
+        .diagram-panel.p { border-left: 3px solid var(--accent-3); }
+        .diagram-panel.g { border-left: 3px solid var(--accent-4); }
+        .diagram-panel.b { border-left: 3px solid var(--accent-5); }
+        .diagram-panel h4 { font-family: var(--font-display); font-size: 1rem; color: var(--accent); margin-bottom: 0.5rem; }
+        .diagram-panel.r h4 { color: var(--accent-2); }
+        .diagram-panel.p h4 { color: var(--accent-3); }
+        .diagram-panel.g h4 { color: var(--accent-4); }
+        .diagram-panel.b h4 { color: var(--accent-5); }
+        .diagram-panel p, .diagram-panel ul { font-size: 0.9rem; }
+        .callout { background: var(--bg-card); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin: 1.25rem 0; }
+        .callout p { margin-bottom: 0; }
+        .callout .callout-label { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+        .quote { font-family: var(--font-display); font-size: 1.1rem; font-style: italic; color: var(--text-primary); padding: 1rem 1.5rem; border-left: 3px solid var(--accent); background: var(--bg-card); margin: 1.25rem 0; border-radius: 0 8px 8px 0; }
+        .quote .attr { display: block; margin-top: 0.5rem; font-style: normal; font-size: 0.85rem; color: var(--text-secondary); font-family: var(--font-mono); }
+        .canvas-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1.25rem 0; overflow-x: auto; }
+        .canvas-wrap canvas, .canvas-wrap svg { display: block; margin: 0 auto; max-width: 100%; }
+        .control-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.25rem 0; }
+        .control-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+        .control-row label { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); min-width: 160px; }
+        .control-row input[type="range"] { flex: 1; min-width: 150px; accent-color: var(--accent); }
+        .control-row select, .control-row input[type="number"] { background: var(--bg-code); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 0.3rem 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; }
+        .control-row .val { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); min-width: 80px; text-align: right; }
+        .btn { font-family: var(--font-mono); font-size: 0.8rem; padding: 0.4rem 0.9rem; background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; cursor: pointer; transition: background 0.15s ease; }
+        .btn:hover { background: rgba(251,191,36,0.25); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn.secondary { background: var(--bg-code); color: var(--text-secondary); border-color: var(--border); }
+        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem; margin-top: 0.75rem; }
+        .metric { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.8rem; text-align: center; }
+        .metric .metric-label { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; }
+        .metric .metric-value { font-family: var(--font-display); font-size: 1.25rem; color: var(--accent); font-weight: 600; margin-top: 0.2rem; }
+        .contents-list { list-style: none; padding-left: 0; counter-reset: contents; }
+        .contents-list li { counter-increment: contents; padding: 0.6rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; }
+        .contents-list li:last-child { border-bottom: none; }
+        .contents-list li::before { content: counter(contents, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); min-width: 2rem; }
+        .contents-list a { color: var(--text-primary); text-decoration: none; }
+        .contents-list a:hover { color: var(--accent); }
+        .footer { text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary); font-size: 0.85rem; border-top: 1px solid var(--border); max-width: var(--max-width); margin: 0 auto; }
+        .footer a { color: var(--accent); text-decoration: none; }
+        .katex { color: var(--text-primary); }
+        .katex-display { margin: 1rem 0; overflow-x: auto; overflow-y: hidden; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 1rem 0; }
+        th { background: var(--bg-code); color: var(--accent); font-weight: 600; text-align: left; padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--border); font-family: var(--font-display); }
+        td { padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) td { background: rgba(13, 17, 23, 0.5); }
+        @media (max-width: 640px) {
+            .slide { padding: 3rem 1rem; min-height: auto; }
+            .slide-number { font-size: 3rem; top: 1.5rem; right: 1rem; }
+            .slide h2 { font-size: 1.5rem; }
+            .diagram-grid.cols-2, .diagram-grid.cols-3, .diagram-grid.cols-4 { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="hero">
+    <div class="series-label">Paul Wilmott Introduces Quantitative Finance &mdash; Deck 14</div>
+    <h1>Numerical <span class="accent">Methods</span></h1>
+    <p class="subtitle">Finite differences, Monte Carlo, and quasi-Monte Carlo &mdash; the three families that price every derivative for which a closed form doesn't exist (i.e. nearly all of them).</p>
+
+    <div class="tags">
+        <span class="tag">finite differences</span><span class="tag">explicit</span>
+        <span class="tag">implicit</span><span class="tag">Crank&ndash;Nicolson</span>
+        <span class="tag">Monte Carlo</span><span class="tag">antithetic</span>
+        <span class="tag">Longstaff&ndash;Schwartz</span><span class="tag">Sobol</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">PDE or SDE</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">grid / paths</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">step backward / forward</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">price + Greeks</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">error analysis</span>
+    </div>
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Three families of numerical methods</a></li>
+        <li><a href="#slide-02">The (S, t) grid &mdash; explicit, implicit, CN</a></li>
+        <li><a href="#slide-03">Approximating derivatives on the grid</a></li>
+        <li><a href="#slide-04">Explicit FD for the Black&ndash;Scholes PDE</a></li>
+        <li><a href="#slide-05">American options on a FD grid</a></li>
+        <li><a href="#slide-06">Monte Carlo simulation</a></li>
+        <li><a href="#slide-07">Generating normals; antithetic and control variates</a></li>
+        <li><a href="#slide-08">American MC: Longstaff&ndash;Schwartz</a></li>
+        <li><a href="#slide-09">Low-discrepancy sequences (Halton, Sobol)</a></li>
+        <li><a href="#slide-10">Interactive: MC vs FD pricer</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Three Families of Numerical Methods</h2>
+    <p>Closed-form prices exist for European options under Black&ndash;Scholes &mdash; and almost nothing else. Everything else is a numerical method. Wilmott groups them into three:</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Finite differences</h4>
+            <p>Discretise the pricing PDE on a grid in $(S, t)$ space. Step backwards from the terminal payoff to today. Great when there's a PDE and the dimension is low (1&ndash;3).</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Monte Carlo</h4>
+            <p>Discretise the SDE for $S$. Simulate paths, average the payoff, discount. Error $\propto 1/\sqrt{N}$ regardless of dimension &mdash; the high-dimensional default choice.</p>
+        </div>
+        <div class="diagram-panel p">
+            <h4>Numerical integration</h4>
+            <p>When the price reduces to an integral &mdash; e.g. via a Fourier transform of the characteristic function for Heston or VG &mdash; just integrate it. The narrowest scope, but cheapest where it applies.</p>
+        </div>
+    </div>
+
+    <p>Almost every production pricer is some combination of these three. The fun is figuring out which one suits the contract: path-dependence steers you toward MC; early-exercise steers you toward FD; closed-form characteristic functions invite Fourier integration.</p>
+
+    <div class="callout">
+        <div class="callout-label">Companion philosophy</div>
+        <p>This deck covers chapters 27, 28, 29 and 30 of Wilmott. The interactive widget on slide 10 lets you price a European call by either Monte Carlo or explicit finite differences and watch the convergence (the $1/\sqrt N$ MC envelope and the FD grid error) against the closed-form Black&ndash;Scholes value.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>The $(S, t)$ Grid &mdash; Explicit, Implicit, CN</h2>
+    <p>The Black&ndash;Scholes PDE for option price $V(S, t)$:</p>
+    <p>$$\frac{\partial V}{\partial t} + \tfrac{1}{2} \sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} + r S \frac{\partial V}{\partial S} - r V = 0.$$</p>
+
+    <p>Lay down a grid: $S_i = i \cdot \delta S$ for $i = 0, \ldots, I$ and $t_k = k \cdot \delta t$ for $k = 0, \ldots, N$. Three time-stepping schemes:</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Explicit</h4>
+            <p>Use values at $t_{k+1}$ to compute $t_k$. Each new value is an explicit weighted average of three neighbours.</p>
+            <p><strong>Pro:</strong> trivial to code.</p>
+            <p><strong>Con:</strong> conditionally stable &mdash; $\delta t$ must shrink as $\delta S$ shrinks.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Implicit</h4>
+            <p>Solve a tridiagonal linear system at each time step.</p>
+            <p><strong>Pro:</strong> unconditionally stable.</p>
+            <p><strong>Con:</strong> needs a linear solver; first-order in time.</p>
+        </div>
+        <div class="diagram-panel p">
+            <h4>Crank&ndash;Nicolson</h4>
+            <p>The average of explicit and implicit.</p>
+            <p><strong>Pro:</strong> stable, second-order in both $\delta t$ and $\delta S$.</p>
+            <p><strong>Con:</strong> can produce oscillations near non-smooth payoffs.</p>
+        </div>
+    </div>
+
+    <p>For the textbook Black&ndash;Scholes PDE, the workhorse in research is CN; the workhorse in production is often implicit with a small CN smoother near the strike (the "Rannacher start" trick) to suppress oscillations.</p>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Approximating Derivatives on the Grid</h2>
+    <p>Three flavours of finite-difference approximation. Let $V_i^k$ denote $V(S_i, t_k)$.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel b">
+            <h4>Forward difference</h4>
+            <p>$$\frac{\partial V}{\partial S} \approx \frac{V_{i+1}^k - V_i^k}{\delta S}.$$</p>
+            <p>First-order accurate. Asymmetric &mdash; biased toward the right neighbour.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Backward difference</h4>
+            <p>$$\frac{\partial V}{\partial S} \approx \frac{V_i^k - V_{i-1}^k}{\delta S}.$$</p>
+            <p>First-order accurate. Asymmetric the other way.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Central difference</h4>
+            <p>$$\frac{\partial V}{\partial S} \approx \frac{V_{i+1}^k - V_{i-1}^k}{2 \delta S}.$$</p>
+            <p>Second-order accurate. The default for &Delta; &mdash; clean and symmetric.</p>
+        </div>
+    </div>
+
+    <p>For the second derivative (Gamma):</p>
+    <p>$$\frac{\partial^2 V}{\partial S^2} \approx \frac{V_{i+1}^k - 2 V_i^k + V_{i-1}^k}{(\delta S)^2}.$$</p>
+
+    <p>And for the time derivative, either a forward or backward step depending on the scheme:</p>
+    <p>$$\frac{\partial V}{\partial t} \approx \frac{V_i^{k+1} - V_i^k}{\delta t}.$$</p>
+
+    <div class="callout">
+        <div class="callout-label">Boundary conditions</div>
+        <p>The grid has boundaries; the PDE doesn't. You impose Dirichlet ($V = 0$ at $S = 0$ for a call) or asymptotic ($V \to S - K e^{-rT}$ as $S \to \infty$) conditions at the edges. The corners matter &mdash; a wrong boundary can corrupt the whole price.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Explicit FD for the Black&ndash;Scholes PDE</h2>
+    <p>Insert the finite differences into the PDE and rearrange:</p>
+    <p>$$V_i^k = a_i V_{i-1}^{k+1} + b_i V_i^{k+1} + c_i V_{i+1}^{k+1},$$</p>
+    <p>with coefficients</p>
+    <p>$$a_i = \tfrac{1}{2}\delta t (\sigma^2 i^2 - r i),\;\; b_i = 1 - \delta t (\sigma^2 i^2 + r),\;\; c_i = \tfrac{1}{2}\delta t (\sigma^2 i^2 + r i).$$</p>
+
+    <p>Step backwards from the terminal payoff $V_i^N = \max(S_i - K, 0)$. At each step, every interior $V_i^k$ is computed from three neighbours at the next time slice.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Stability condition</h4>
+            <p>For all $a_i, b_i, c_i$ to be non-negative and the scheme to be stable:</p>
+            <p>$$\delta t \le \frac{1}{\sigma^2 I^2 + r}.$$</p>
+            <p>Halving $\delta S$ forces $\delta t$ to drop by a factor of <em>four</em>. The total cost is $O(I \cdot N) = O(I^3)$.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>What goes wrong if you violate it</h4>
+            <p>Oscillations that double in amplitude every step. The price blows up in a few iterations. Useful pedagogically &mdash; you can see it happen on a small grid.</p>
+        </div>
+    </div>
+
+    <p>Practical version: use a log-transformed grid in $x = \log S$, which kills the $i^2$ in the coefficients and gives a stable scheme with $\delta t = O(\delta x^2)$. The CN scheme on the log-grid is the standard implementation.</p>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>American Options on a FD Grid</h2>
+    <p>An American option can be exercised at any time before $T$. At every grid node, the holder compares two values:</p>
+    <ul>
+        <li><strong>Continuation value</strong> &mdash; the value of holding the option for one more step, computed from the PDE update.</li>
+        <li><strong>Intrinsic value</strong> &mdash; the payoff if exercised <em>now</em>.</li>
+    </ul>
+
+    <p>The American option is worth the larger of the two:</p>
+    <p>$$V_i^k = \max\!\big(V_\text{cont}, \, \text{intrinsic}(S_i)\big).$$</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel g">
+            <h4>Algorithm</h4>
+            <ol>
+                <li>Terminal condition: $V_i^N = $ payoff.</li>
+                <li>For $k = N-1, N-2, \ldots, 0$:
+                    <ul>
+                        <li>Compute the PDE update for each interior $V_i^k$.</li>
+                        <li>Override: $V_i^k \leftarrow \max(V_i^k, \text{intrinsic}(S_i))$.</li>
+                    </ul>
+                </li>
+                <li>Read off $V_{i^*}^0$ at $S_{i^*} = S_0$.</li>
+            </ol>
+        </div>
+        <div class="diagram-panel p">
+            <h4>The exercise boundary</h4>
+            <p>At each $t_k$ there's a critical $S^*(t_k)$ above (call) or below (put) which exercise is optimal. The "max" step traces this boundary out for free &mdash; it's the kink in the value function.</p>
+        </div>
+    </div>
+
+    <p>The same idea works for implicit and CN schemes, but the "max" step has to be combined with the linear-solve step &mdash; this becomes a <em>linear complementarity problem</em>, and is the cleanest formulation of the American pricing PDE.</p>
+
+    <div class="callout">
+        <div class="callout-label">Why FD beats MC for American</div>
+        <p>Backward induction trivially compares "hold" vs. "exercise" at each grid node. Monte Carlo runs forward in time and doesn't see future paths from a given state &mdash; the Longstaff&ndash;Schwartz trick (slide 08) is the way to retrofit it.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Monte Carlo Simulation</h2>
+    <p>The risk-neutral price of a European-style option is</p>
+    <p>$$V_0 = e^{-rT}\, \mathbb{E}^\mathbb{Q}[\text{payoff}(S_T)].$$</p>
+
+    <p>MC estimates the expectation by simulating paths under $dS = r S\, dt + \sigma S\, dW$ and averaging the discounted payoff:</p>
+    <p>$$\hat V_0 = e^{-rT} \cdot \frac{1}{N} \sum_{n=1}^N \text{payoff}(S_T^{(n)}).$$</p>
+
+    <p>For lognormal $S$, you don't need to discretise: $S_T = S_0 \exp\!\big((r - \tfrac{1}{2}\sigma^2)T + \sigma \sqrt T\, Z\big)$ with $Z \sim \mathcal{N}(0,1)$.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel b">
+            <h4>Pros</h4>
+            <ul>
+                <li>Error $\propto 1/\sqrt{N}$, <em>independent of dimension</em>. The only choice for basket options on 20 underlyings, exotic-rate trades, etc.</li>
+                <li>Trivially parallel &mdash; one CPU/GPU per path.</li>
+                <li>Path-dependent payoffs (Asians, lookbacks, barriers) are natural.</li>
+            </ul>
+        </div>
+        <div class="diagram-panel p">
+            <h4>Cons</h4>
+            <ul>
+                <li>$1/\sqrt N$ convergence is <em>slow</em>: to halve the error you need 4&times; the paths.</li>
+                <li>American options need a regression trick (LS).</li>
+                <li>Greeks are noisier than the price &mdash; pathwise / likelihood-ratio methods help.</li>
+            </ul>
+        </div>
+    </div>
+
+    <h3>Standard error</h3>
+    <p>The 95% confidence half-width is $\approx 1.96\, \hat\sigma / \sqrt{N}$ where $\hat\sigma$ is the sample std of the discounted payoffs. Always report this alongside the price.</p>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Generating Normals; Antithetic and Control Variates</h2>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Box&ndash;Muller</h4>
+            <p>From two i.i.d. uniform $(0,1)$ variables $U_1, U_2$, produce two i.i.d. standard normals:</p>
+            <p>$$Z_1 = \sqrt{-2 \ln U_1}\, \cos(2 \pi U_2),$$</p>
+            <p>$$Z_2 = \sqrt{-2 \ln U_1}\, \sin(2 \pi U_2).$$</p>
+            <p>Or the polar version (Marsaglia), which avoids the trig functions.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Antithetic variates</h4>
+            <p>For every path driven by $Z$, also run a "mirror" path driven by $-Z$. The two estimators are negatively correlated, so their average has lower variance. Free (almost) &mdash; just one extra payoff per path.</p>
+        </div>
+        <div class="diagram-panel p">
+            <h4>Control variates</h4>
+            <p>Use a related instrument with a known price $g$ as a control:</p>
+            <p>$$\hat V_\text{CV} = \hat V - \beta\, (\hat g - g).$$</p>
+            <p>Choose $\beta$ to minimise variance. Spectacular when $V$ and $g$ are highly correlated (e.g. pricing an Asian via a geometric Asian).</p>
+        </div>
+    </div>
+
+    <p>All three are <em>variance reduction</em> techniques &mdash; they don't change the asymptotic $1/\sqrt N$ rate, but they shrink the constant in front. A 4&times; variance reduction is equivalent to 4&times; the paths at the same cost.</p>
+
+    <div class="callout">
+        <div class="callout-label">A rough rule</div>
+        <p>For a vanilla European, plain MC gets within 1% of BS at $N \approx 10^4$&ndash;$10^5$. With antithetic and a control variate, you can get there at $N \approx 10^3$.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>American MC: Longstaff&ndash;Schwartz</h2>
+    <p>An American option's value depends on the optimal exercise policy. To use MC, we need to know &mdash; on a forward-simulated path &mdash; whether to exercise at each step. But that requires knowing the continuation value, which is the very expectation we're trying to compute.</p>
+
+    <p>Longstaff and Schwartz (2001) solved this with a <strong>regression on basis functions</strong>:</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>The algorithm</h4>
+            <ol>
+                <li>Simulate $N$ paths of $S$ forward to maturity.</li>
+                <li>At maturity, set $C^N = $ payoff for each path.</li>
+                <li>Stepping backward through time $k = N-1, \ldots, 1$:
+                    <ul>
+                        <li>For each in-the-money path, regress the discounted future cashflow on basis functions of $S_i^k$ (typically $1, S, S^2$ or Laguerre polynomials).</li>
+                        <li>Use the fitted regression as the continuation value $\hat C^k$.</li>
+                        <li>Exercise on paths where intrinsic &gt; $\hat C^k$; update cashflow accordingly.</li>
+                    </ul>
+                </li>
+                <li>Discount cashflows to $t = 0$ and average.</li>
+            </ol>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Why it works</h4>
+            <p>The conditional expectation $\mathbb{E}[C^{k+1} \mid S^k]$ is a function of $S^k$. We approximate that function by least-squares regression on a few basis functions. As $N$ and the number of basis functions grow, the approximation converges to the true conditional expectation.</p>
+            <p>You're effectively learning the exercise boundary from the simulated paths themselves.</p>
+        </div>
+    </div>
+
+    <p>LS is the dominant method for American/Bermudan options when the state space is multi-dimensional and FD is impractical. It's the everyday workhorse for Bermudan-swaption pricers in fixed-income desks.</p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>Low-discrepancy Sequences (Halton, Sobol)</h2>
+    <p>Random samples are great for variance estimates but they cluster &mdash; you get holes and clumps that look uniform only in the limit. <strong>Low-discrepancy</strong> (quasi-random) sequences fill space more evenly, by construction.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel b">
+            <h4>Halton</h4>
+            <p>Uses the radical-inverse function in different prime bases for each dimension. Quick to implement; degrades in high dimensions because higher primes give noticeable correlation.</p>
+        </div>
+        <div class="diagram-panel p">
+            <h4>Sobol</h4>
+            <p>Built from a set of "direction numbers" via bitwise XOR. Excellent space-filling up to thousands of dimensions, especially with the modern Joe&ndash;Kuo direction numbers. The industry standard for QMC.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>What QMC buys you</h4>
+            <p>Error rate up to $O((\log N)^d / N)$ &mdash; essentially $1/N$ for moderate dimensions, vs. $1/\sqrt N$ for MC. For smooth payoffs in dimension &lt; 50 this is a huge speedup.</p>
+        </div>
+    </div>
+
+    <p>The catch: error <em>bounds</em> rely on integrand smoothness, and confidence intervals are harder to get than for plain MC. The standard fix is <strong>randomised QMC</strong> &mdash; scramble or shift the Sobol sequence to recover a probabilistic error estimate while keeping most of the variance reduction.</p>
+
+    <div class="callout">
+        <div class="callout-label">When to reach for QMC</div>
+        <p>Pricing a European option in 1D: probably overkill. Pricing a 30-dimensional CMS spread option with mostly smooth payoff: a 10&times;&ndash;100&times; speedup over plain MC is realistic. The crossover depends heavily on payoff smoothness.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Interactive: MC vs FD Pricer</h2>
+    <p>A European call. Pick $S_0$, $K$, $T$, $\sigma$, $r$, $N$ (paths for MC / grid resolution for FD), and a method. For MC you'll see ~30 sample paths and the payoff histogram; for FD you'll see a heatmap of the option-value surface $V(S, t)$. The metric grid reports the estimated price, the standard error or grid error, and the closed-form Black&ndash;Scholes value.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="num-canvas" width="860" height="340"></canvas>
+    </div>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="method-select">Method</label>
+            <select id="method-select">
+                <option value="mc">Monte Carlo</option>
+                <option value="fd">Explicit FD</option>
+            </select>
+        </div>
+        <div class="control-row">
+            <label for="s0-slider">$S_0$</label>
+            <input type="range" id="s0-slider" min="20" max="200" step="1" value="100">
+            <span class="val" id="s0-val">100</span>
+        </div>
+        <div class="control-row">
+            <label for="k-slider">$K$</label>
+            <input type="range" id="k-slider" min="20" max="200" step="1" value="100">
+            <span class="val" id="k-val">100</span>
+        </div>
+        <div class="control-row">
+            <label for="T-slider">$T$ (years)</label>
+            <input type="range" id="T-slider" min="0.1" max="3" step="0.1" value="1">
+            <span class="val" id="T-val">1.00</span>
+        </div>
+        <div class="control-row">
+            <label for="sigma-slider">$\sigma$</label>
+            <input type="range" id="sigma-slider" min="0.05" max="0.6" step="0.01" value="0.2">
+            <span class="val" id="sigma-val">0.20</span>
+        </div>
+        <div class="control-row">
+            <label for="r-slider">$r$</label>
+            <input type="range" id="r-slider" min="0" max="0.10" step="0.005" value="0.04">
+            <span class="val" id="r-val">0.040</span>
+        </div>
+        <div class="control-row">
+            <label for="N-slider">$N$ (paths / grid)</label>
+            <input type="range" id="N-slider" min="50" max="5000" step="50" value="1000">
+            <span class="val" id="N-val">1000</span>
+        </div>
+        <div class="control-row">
+            <button id="resim-btn" class="btn">Resimulate</button>
+        </div>
+        <div class="metric-grid">
+            <div class="metric"><div class="metric-label">Estimate</div><div class="metric-value" id="m-est">&mdash;</div></div>
+            <div class="metric"><div class="metric-label">Std err / grid err</div><div class="metric-value" id="m-err">&mdash;</div></div>
+            <div class="metric"><div class="metric-label">BS closed form</div><div class="metric-value" id="m-bs">&mdash;</div></div>
+            <div class="metric"><div class="metric-label">Estimate &minus; BS</div><div class="metric-value" id="m-diff">&mdash;</div></div>
+        </div>
+    </div>
+
+    <p>Toggle between MC and FD to see the trade-off. The MC histogram shows how the bulk of paths finish out-of-the-money (payoff = 0) and a long right tail carries the value &mdash; this is why MC for far-out-of-the-money options is so noisy. The FD heatmap is the entire <em>solution</em> $V(S, t)$ &mdash; one solve gives you the price for every spot.</p>
+</section>
+
+<footer class="footer">
+    <p>Deck 14 of the <a href="https://github.com/BrendanJamesLynskey/Wilmott_QF_Hub">Paul Wilmott Introduces Quantitative Finance &mdash; Companion Series</a>.</p>
+    <p style="margin-top: 0.6rem;">Companion to chapters 27, 28, 29 and 30 of <em>Paul Wilmott Introduces Quantitative Finance</em>, 2nd edition (Wiley, 2007).</p>
+</footer>
+
+<script>
+(function() {
+    const $ = id => document.getElementById(id);
+    const sel = $('method-select');
+    const sS0 = $('s0-slider'), sK = $('k-slider'), sT = $('T-slider'),
+          sSig = $('sigma-slider'), sR = $('r-slider'), sN = $('N-slider');
+    const vS0 = $('s0-val'), vK = $('k-val'), vT = $('T-val'),
+          vSig = $('sigma-val'), vR = $('r-val'), vN = $('N-val');
+    const mEst = $('m-est'), mErr = $('m-err'), mBS = $('m-bs'), mDiff = $('m-diff');
+    const btn = $('resim-btn');
+    const canvas = $('num-canvas'), ctx = canvas.getContext('2d');
+
+    function fmt(x, dp) { return x.toFixed(dp == null ? 3 : dp); }
+
+    function normCdf(x) {
+        // Abramowitz-Stegun 26.2.17
+        const t = 1 / (1 + 0.2316419 * Math.abs(x));
+        const d = 0.3989422804014327 * Math.exp(-x * x / 2);
+        const p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+        return x >= 0 ? 1 - p : p;
+    }
+    function bsCall(S0, K, T, sigma, r) {
+        if (T <= 0) return Math.max(S0 - K, 0);
+        const d1 = (Math.log(S0 / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T));
+        const d2 = d1 - sigma * Math.sqrt(T);
+        return S0 * normCdf(d1) - K * Math.exp(-r * T) * normCdf(d2);
+    }
+
+    function rnorm() {
+        let u = 0, v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    // ----- Monte Carlo -----
+    function runMC(S0, K, T, sigma, r, N) {
+        const drift = (r - 0.5 * sigma * sigma) * T;
+        const diff = sigma * Math.sqrt(T);
+        const payoffs = new Float64Array(N);
+        const STs = new Float64Array(N);
+        for (let i = 0; i < N; i++) {
+            const z = rnorm();
+            const ST = S0 * Math.exp(drift + diff * z);
+            STs[i] = ST;
+            payoffs[i] = Math.max(ST - K, 0);
+        }
+        let s = 0, s2 = 0;
+        for (let i = 0; i < N; i++) { s += payoffs[i]; s2 += payoffs[i] * payoffs[i]; }
+        const mean = s / N;
+        const variance = (s2 / N) - mean * mean;
+        const disc = Math.exp(-r * T);
+        const price = disc * mean;
+        const stderr = disc * Math.sqrt(Math.max(variance, 0)) / Math.sqrt(N);
+
+        // sample paths (~30)
+        const PATHS = 30, STEPS = 40;
+        const paths = [];
+        const dt = T / STEPS;
+        const sqdt = Math.sqrt(dt);
+        for (let p = 0; p < PATHS; p++) {
+            const path = new Float64Array(STEPS + 1);
+            path[0] = S0;
+            for (let i = 0; i < STEPS; i++) {
+                const z = rnorm();
+                path[i + 1] = path[i] * Math.exp((r - 0.5 * sigma * sigma) * dt + sigma * sqdt * z);
+            }
+            paths.push(path);
+        }
+        return { price, stderr, STs, payoffs, paths, STEPS, dt };
+    }
+
+    // ----- Finite difference (explicit, log-space) -----
+    function runFD(S0, K, T, sigma, r, N) {
+        // grid in log(S/K)
+        const Ix = Math.min(120, Math.max(40, Math.floor(N / 20)));
+        const Lx = 4 * sigma * Math.sqrt(T) + 0.5; // half-width in x
+        const xMin = -Lx, xMax = Lx;
+        const dx = (xMax - xMin) / Ix;
+        // stability: dt <= dx^2 / sigma^2
+        const dtMax = 0.9 * dx * dx / (sigma * sigma);
+        const Nt = Math.max(50, Math.ceil(T / dtMax));
+        const dt = T / Nt;
+        const xs = new Float64Array(Ix + 1);
+        for (let i = 0; i <= Ix; i++) xs[i] = xMin + i * dx;
+        // V at maturity: payoff
+        let V = new Float64Array(Ix + 1);
+        for (let i = 0; i <= Ix; i++) {
+            const S = K * Math.exp(xs[i]);
+            V[i] = Math.max(S - K, 0);
+        }
+        // store snapshots at ~30 time levels for heatmap
+        const SNAP = 30;
+        const snapEvery = Math.max(1, Math.floor(Nt / SNAP));
+        const snaps = [{ k: Nt, V: new Float64Array(V) }];
+
+        const mu = r - 0.5 * sigma * sigma;
+        // V_t + 0.5 sigma^2 V_xx + mu V_x - r V = 0
+        // explicit backward: V^k = V^{k+1} + dt * (0.5 sigma^2 V_xx + mu V_x - r V^{k+1})
+        for (let k = Nt - 1; k >= 0; k--) {
+            const Vnew = new Float64Array(Ix + 1);
+            for (let i = 1; i < Ix; i++) {
+                const vxx = (V[i + 1] - 2 * V[i] + V[i - 1]) / (dx * dx);
+                const vx = (V[i + 1] - V[i - 1]) / (2 * dx);
+                Vnew[i] = V[i] + dt * (0.5 * sigma * sigma * vxx + mu * vx - r * V[i]);
+            }
+            // boundary: S=0 -> V=0; S large -> V = S - K*e^{-r(T-t)}
+            Vnew[0] = 0;
+            const Slarge = K * Math.exp(xMax);
+            Vnew[Ix] = Math.max(Slarge - K * Math.exp(-r * k * dt), 0);
+            V = Vnew;
+            if ((Nt - k) % snapEvery === 0 || k === 0) {
+                snaps.push({ k, V: new Float64Array(V) });
+            }
+        }
+        // price at S0
+        const x0 = Math.log(S0 / K);
+        // linear interp
+        let idx = Math.floor((x0 - xMin) / dx);
+        if (idx < 0) idx = 0; if (idx >= Ix) idx = Ix - 1;
+        const frac = (x0 - xs[idx]) / dx;
+        const price = V[idx] * (1 - frac) + V[idx + 1] * frac;
+        // crude grid error proxy: |price - BS| if BS available
+        const bs = bsCall(S0, K, T, sigma, r);
+        const gridErr = Math.abs(price - bs);
+        return { price, gridErr, snaps, xs, Ix, xMin, xMax, dx, K, Nt };
+    }
+
+    function drawMC(res, params) {
+        const { paths, STEPS, dt, payoffs, STs, price, stderr } = res;
+        const { K, T } = params;
+
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        const padT = 30, padB = 36, padL = 50, padR = 12;
+        const leftW = W * 0.6, rightW = W * 0.4;
+        // y-range
+        let sMin = Infinity, sMax = -Infinity;
+        for (const p of paths) for (let i = 0; i <= STEPS; i++) {
+            if (p[i] < sMin) sMin = p[i]; if (p[i] > sMax) sMax = p[i];
+        }
+        sMin = Math.min(sMin, K * 0.9); sMax = Math.max(sMax, K * 1.1);
+
+        const x2px = t => padL + t / T * (leftW - padL - padR);
+        const y2px = s => padT + (H - padT - padB) - (s - sMin) / (sMax - sMin) * (H - padT - padB);
+
+        // grid
+        ctx.strokeStyle = '#21262d'; ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            const yy = padT + i / 4 * (H - padT - padB);
+            ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(leftW - padR, yy); ctx.stroke();
+        }
+        // strike line
+        if (K >= sMin && K <= sMax) {
+            ctx.strokeStyle = '#f472b6'; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.5;
+            const yK = y2px(K);
+            ctx.beginPath(); ctx.moveTo(padL, yK); ctx.lineTo(leftW - padR, yK); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        // paths
+        for (let p = 0; p < paths.length; p++) {
+            const path = paths[p];
+            const hue = (p * 37) % 360;
+            ctx.strokeStyle = `hsla(${hue}, 60%, 60%, 0.4)`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = 0; i <= STEPS; i++) {
+                const px = x2px(i * dt), py = y2px(path[i]);
+                if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+        }
+
+        ctx.fillStyle = '#8b949e'; ctx.font = '11px JetBrains Mono';
+        ctx.fillText('sample paths (S_t)', padL, padT - 10);
+        ctx.fillStyle = '#f472b6'; ctx.fillText('K', padL - 14, y2px(K) + 4);
+
+        // -- right: histogram of payoffs --
+        const hx0 = leftW;
+        const plotW = rightW - padL - padR, plotH = H - padT - padB;
+        const positive = Array.from(payoffs).filter(p => p > 0);
+        const pMin = 0, pMax = positive.length > 0 ? Math.max(...positive) * 1.05 : 1;
+        const bins = 20;
+        const counts = new Array(bins).fill(0);
+        let nZero = 0;
+        for (const p of payoffs) {
+            if (p <= 0) { nZero++; continue; }
+            const idx = Math.max(0, Math.min(bins - 1, Math.floor((p - pMin) / (pMax - pMin) * bins)));
+            counts[idx]++;
+        }
+        const cMax = Math.max(...counts, nZero) || 1;
+
+        ctx.strokeStyle = '#21262d'; ctx.lineWidth = 1;
+        ctx.strokeRect(hx0 + padL, padT, plotW, plotH);
+
+        const barW = plotW / (bins + 1);
+        // zero bar
+        const hZero = nZero / cMax * plotH;
+        ctx.fillStyle = '#3a4252';
+        ctx.fillRect(hx0 + padL + 1, padT + plotH - hZero, barW - 2, hZero);
+        // other bars
+        ctx.fillStyle = '#fbbf24';
+        for (let i = 0; i < bins; i++) {
+            const h = counts[i] / cMax * plotH;
+            ctx.fillRect(hx0 + padL + (i + 1) * barW + 1, padT + plotH - h, barW - 2, h);
+        }
+
+        ctx.fillStyle = '#8b949e'; ctx.font = '11px JetBrains Mono';
+        ctx.fillText('payoff histogram', hx0 + padL, padT - 10);
+        ctx.fillText('=0', hx0 + padL + 2, padT + plotH - 4);
+        ctx.fillText(fmt(pMax, 0), hx0 + padL + plotW - 28, padT + plotH - 4);
+    }
+
+    function drawFD(res, params) {
+        const { snaps, xs, Ix, xMin, xMax, dx, K, Nt } = res;
+        const { T } = params;
+
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        const padT = 30, padB = 36, padL = 50, padR = 12;
+        const plotW = W - padL - padR, plotH = H - padT - padB;
+
+        // sort snaps by k ascending so time increases left to right
+        snaps.sort((a, b) => a.k - b.k);
+        const M = snaps.length;
+        const cellW = plotW / M;
+        const cellH = plotH / (Ix + 1);
+        // find max V for normalisation
+        let vMax = 1e-9;
+        for (const s of snaps) for (let i = 0; i <= Ix; i++) if (s.V[i] > vMax) vMax = s.V[i];
+
+        for (let j = 0; j < M; j++) {
+            const s = snaps[j];
+            for (let i = 0; i <= Ix; i++) {
+                const v = s.V[i] / vMax;
+                // colormap: blue (low) -> yellow -> pink (high)
+                const t = Math.max(0, Math.min(1, v));
+                let r, g, b;
+                if (t < 0.5) {
+                    const u = t * 2;
+                    r = Math.round(96 + u * (251 - 96));
+                    g = Math.round(165 + u * (191 - 165));
+                    b = Math.round(250 + u * (36 - 250));
+                } else {
+                    const u = (t - 0.5) * 2;
+                    r = Math.round(251 + u * (244 - 251));
+                    g = Math.round(191 + u * (114 - 191));
+                    b = Math.round(36 + u * (182 - 36));
+                }
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                const px = padL + j * cellW;
+                const py = padT + (Ix - i) * cellH; // S grows upward
+                ctx.fillRect(px, py, cellW + 0.5, cellH + 0.5);
+            }
+        }
+
+        // strike line: x = 0
+        if (xMin < 0 && xMax > 0) {
+            ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.2;
+            const yK = padT + (Ix - Math.round((0 - xMin) / dx)) * cellH;
+            ctx.beginPath(); ctx.moveTo(padL, yK); ctx.lineTo(padL + plotW, yK); ctx.stroke();
+        }
+
+        ctx.fillStyle = '#8b949e'; ctx.font = '11px JetBrains Mono';
+        ctx.fillText('V(S, t) heatmap', padL, padT - 10);
+        ctx.fillText('t=0', padL + 4, H - 18);
+        ctx.fillText('t=T', padL + plotW - 30, H - 18);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText('S=K', padL - 28, padT + (Ix - Math.round((0 - xMin) / dx)) * cellH + 4);
+        ctx.fillStyle = '#8b949e';
+        ctx.fillText('S high', 4, padT + 10);
+        ctx.fillText('S low', 4, padT + plotH);
+    }
+
+    function run() {
+        const method = sel.value;
+        const S0 = +sS0.value, K = +sK.value, T = +sT.value,
+              sigma = +sSig.value, r = +sR.value, N = +sN.value;
+
+        vS0.textContent = S0.toString();
+        vK.textContent = K.toString();
+        vT.textContent = T.toFixed(2);
+        vSig.textContent = sigma.toFixed(2);
+        vR.textContent = r.toFixed(3);
+        vN.textContent = N.toString();
+
+        const bs = bsCall(S0, K, T, sigma, r);
+        mBS.textContent = fmt(bs);
+
+        if (method === 'mc') {
+            const res = runMC(S0, K, T, sigma, r, N);
+            drawMC(res, { K, T });
+            mEst.textContent = fmt(res.price);
+            mErr.textContent = '±' + fmt(1.96 * res.stderr);
+            mDiff.textContent = (res.price - bs >= 0 ? '+' : '') + fmt(res.price - bs);
+        } else {
+            const res = runFD(S0, K, T, sigma, r, N);
+            drawFD(res, { K, T });
+            mEst.textContent = fmt(res.price);
+            mErr.textContent = fmt(res.gridErr);
+            mDiff.textContent = (res.price - bs >= 0 ? '+' : '') + fmt(res.price - bs);
+        }
+    }
+
+    [sel, sS0, sK, sT, sSig, sR, sN].forEach(el => el.addEventListener('input', run));
+    btn.addEventListener('click', run);
+    run();
+})();
+</script>
+</body>
+</html>
